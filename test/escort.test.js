@@ -4,7 +4,7 @@ var connect = require("connect"),
     http = require('http'),
     assert = require("assert"),
     escort = require("../index");
-    
+
 var methods = ["get", "post", "put", "delete"];
 var exampleNames = ["neil", "bob", "windsor"];
 var exampleUnicodeNames = ["nøgel", "über", "cliché"];
@@ -21,7 +21,7 @@ module.exports = {
         var app = connect(
             escort(function (routes) {
                 url = routes.url;
-                
+
                 methods.forEach(function (method) {
                     routes[method]("home_" + method, "/" + method, function (req, res) {
                         res.end(method.toUpperCase() + " /" + method);
@@ -29,17 +29,17 @@ module.exports = {
                 });
             })
         );
-        
+
         methods.forEach(function (method) {
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/" + method, method: method.toUpperCase() },
                 { body: method.toUpperCase() + " /" + method });
-            
+
             assert.strictEqual("/" + method, url["home_" + method]());
 
             methods.forEach(function (otherMethod) {
                 if (method !== otherMethod) {
-                    assert.response(app,
+                    assert.response(http.createServer(app),
                         { url: "/" + method, method: otherMethod.toUpperCase() },
                         { statusCode: 405 });
                 }
@@ -51,7 +51,7 @@ module.exports = {
         var app = connect(
             escort(function (routes) {
                 url = routes.url;
-                
+
                 var descriptor = {};
                 methods.forEach(function (method) {
                     descriptor[method] = function (req, res) {
@@ -61,11 +61,11 @@ module.exports = {
                 routes.bind("home", "/", descriptor);
             })
         );
-        
+
         assert.strictEqual("/", url.home());
-        
+
         methods.forEach(function (method) {
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/", method: method.toUpperCase() },
                 { body: method.toUpperCase() + " /" });
         });
@@ -83,21 +83,21 @@ module.exports = {
                 });
             })
         );
-        
+
         exampleNames.forEach(function (name) {
             methods.forEach(function (method) {
-                assert.response(app,
+                assert.response(http.createServer(app),
                     { url: "/" + name + "/" + method, method: method.toUpperCase() },
                     { body: method.toUpperCase() + " /" + name + "/" + method });
-                
+
                 assert.strictEqual("/" + name + "/" + method, url["name_" + method](name));
                 assert.strictEqual("/" + name + "/" + method, url["name_" + method]({ name: name }));
                 assert.strictEqual("/" + name + "/" + method, url["name_" + method](makeBadString(name)));
                 assert.strictEqual("/" + name + "/" + method, url["name_" + method]({ name: makeBadString(name) }));
-                
+
                 methods.forEach(function (otherMethod) {
                     if (method !== otherMethod) {
-                        assert.response(app,
+                        assert.response(http.createServer(app),
                             { url: "/" + name + "/" + method, method: otherMethod.toUpperCase() },
                             { statusCode: 405 });
                     }
@@ -120,7 +120,7 @@ module.exports = {
                 routes.bind("name", "/{name}", descriptor);
             })
         );
-        
+
         exampleNames.forEach(function (name) {
             assert.strictEqual("/" + name, url.name(name));
             assert.strictEqual("/" + name, url.name({ name: name }));
@@ -128,7 +128,7 @@ module.exports = {
 
         methods.forEach(function (method) {
             exampleNames.forEach(function (name) {
-                assert.response(app,
+                assert.response(http.createServer(app),
                     { url: "/" + name, method: method.toUpperCase() },
                     { body: method.toUpperCase() + " /" + name });
             });
@@ -147,11 +147,11 @@ module.exports = {
                 });
             })
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/do-something", method: "GET" },
             { body: "GET /do-something" });
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/do-something", method: "POST" },
             { body: "POST /do-something" });
     },
@@ -161,10 +161,10 @@ module.exports = {
             "/posts": "posts",
             "/": "root",
         };
-        
+
         Object.keys(routesToExpectedNames).forEach(function (route) {
             var name = routesToExpectedNames[route];
-            
+
             var url;
             var app = connect(
                 escort(function (routes) {
@@ -182,27 +182,27 @@ module.exports = {
         var app = connect(
             escort(function (routes) {
                 url = routes.url;
-                
+
                 routes.get("post", "/posts/{id:int({min: 1, max: 99})}", function (req, res, params) {
                     assert.strictEqual("number", typeof params.id);
-                    
+
                     res.end("GET /posts/" + params.id);
                 });
             })
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/posts/0", method: "GET" },
             { statusCode: 404 });
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/posts/100", method: "GET" },
             { statusCode: 404 });
-        
+
         for (var i = 1; i <= 99; i += 1) {
             assert.strictEqual("/posts/" + i, url.post(i));
             assert.strictEqual("/posts/" + i, url.post({ id: i }));
-            
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/posts/" + i, method: "GET" },
                 { body: "GET /posts/" + i });
         }
@@ -212,27 +212,27 @@ module.exports = {
         var app = connect(
             escort(function (routes) {
                 url = routes.url;
-                
+
                 routes.get("post", "/posts/{id:int({fixedDigits: 4})}", function (req, res, params) {
                     assert.strictEqual("number", typeof params.id);
-                    
+
                     res.end("GET /posts/" + params.id);
                 });
             })
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/posts/0", method: "GET" },
             { statusCode: 404 });
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/posts/100", method: "GET" },
             { statusCode: 404 });
-        
+
         for (var i = 1; i <= 9; i += 1) {
             assert.strictEqual("/posts/000" + i, url.post(i));
             assert.strictEqual("/posts/000" + i, url.post({ id: i }));
-            
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/posts/000" + i, method: "GET" },
                 { body: "GET /posts/" + i });
         }
@@ -251,14 +251,14 @@ module.exports = {
             })
         );
 
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/posts/hi", method: "GET" },
             { statusCode: 404 });
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/posts/howdypartner", method: "GET" },
             { statusCode: 404 });
         for (var i = 0; i < 20; i += 1) {
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/posts/" + "howdypartner".substr(0, i), method: "GET" },
                 { statusCode: i < 3 || i > 8 ? 404 : 200 });
         }
@@ -267,7 +267,7 @@ module.exports = {
             assert.strictEqual("/posts/hey" + i, url.post("hey" + i));
             assert.strictEqual("/posts/hey" + i, url.post({ id: "hey" + i }));
 
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/posts/hey" + i, method: "GET" },
                 { body: "GET /posts/hey" + i });
         }
@@ -289,12 +289,12 @@ module.exports = {
         for (var i = 1; i < "howdy/partner/how/are/you".length; i += 1) {
             var part = "howdy/partner/how/are/you".substr(0, i);
             if (part.charAt(part.length - 1) !== "/") {
-                assert.response(app,
+                assert.response(http.createServer(app),
                     { url: "/posts/" + part, method: "GET" },
                     { body: "GET /posts/" + part });
                 assert.strictEqual("/posts/" + part, url.post(part));
             } else {
-                assert.response(app,
+                assert.response(http.createServer(app),
                     { url: "/posts/" + part, method: "GET" },
                     { statusCode: 301, headers: { Location: "/posts/" + part.substr(0, part.length - 1) } });
             }
@@ -313,20 +313,20 @@ module.exports = {
                 });
             })
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/posts/alpha", method: "GET" },
             { body: "GET /posts/alpha" });
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/posts/bravo", method: "GET" },
             { body: "GET /posts/bravo" });
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/posts/charlie", method: "GET" },
             { body: "GET /posts/charlie" });
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/posts/delta", method: "GET" },
             { statusCode: 404 });
     },
@@ -345,7 +345,7 @@ module.exports = {
                 }
             };
         };
-        
+
         var url;
         var app = connect(
             escort({ converters: { custom: CustomConverter } }, function (routes) {
@@ -359,18 +359,18 @@ module.exports = {
             })
         );
 
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/posts/yes", method: "GET" },
             { body: "GET /posts/yes" });
 
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/posts/no", method: "GET" },
             { body: "GET /posts/no" });
 
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/posts/maybe", method: "GET" },
             { statusCode: 404 });
-        
+
         assert.strictEqual("/posts/yes", url.post(true));
         assert.strictEqual("/posts/no", url.post(false));
     },
@@ -380,19 +380,19 @@ module.exports = {
                 routes.get("/", function (req, res) {
                     res.end("Found the root");
                 });
-                
+
                 routes.notFound(function (req, res, next) {
                     res.writeHead(404);
                     res.end("Not found, oh noes!");
                 });
             })
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "GET" },
             { body: "Found the root" });
 
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/other", method: "GET" },
             { body: "Not found, oh noes!", statusCode: 404 });
     },
@@ -402,7 +402,7 @@ module.exports = {
                 routes.get("/", function (req, res) {
                     res.end("Found the root");
                 });
-                
+
                 routes.notFound(function (req, res, next) {
                     next();
                 });
@@ -411,12 +411,12 @@ module.exports = {
                 res.end("Next middleware");
             }
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "GET" },
             { body: "Found the root" });
 
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/other", method: "GET" },
             { body: "Next middleware" });
     },
@@ -426,19 +426,19 @@ module.exports = {
                 routes.get("/", function (req, res) {
                     res.end("Found the root");
                 });
-                
+
                 routes.methodNotAllowed(function (req, res, next) {
                     res.writeHead(405);
                     res.end("No such method, nuh-uh.");
                 });
             })
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "GET" },
             { body: "Found the root" });
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "POST" },
             { body: "No such method, nuh-uh.", statusCode: 405 });
     },
@@ -458,11 +458,11 @@ module.exports = {
             }
         );
 
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/", method: "GET" },
             { body: "Found the root" });
 
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/", method: "POST" },
             { body: "Next middleware" });
     },
@@ -485,7 +485,7 @@ module.exports = {
                 }
             };
         };
-        
+
         var app = connect(
             escort({ converters: { custom: CustomConverter } }, function (routes) {
                 routes.bind("user", "/users/{name:custom}", {
@@ -498,16 +498,16 @@ module.exports = {
                 });
             })
         );
-        
+
         for (var i = 0; i < 100; i += 1) {
             for (var j = 0, len = exampleNames.length; j < len; j += 1) {
                 var name = exampleNames[j];
-                
-                assert.response(app,
+
+                assert.response(http.createServer(app),
                     { url: "/users/" + name, method: "GET" },
                     { body: "GET /users/" + name });
-                
-                assert.response(app,
+
+                assert.response(http.createServer(app),
                     { url: "/users/" + name, method: "POST" },
                     { body: "POST /users/" + name });
             }
@@ -518,7 +518,7 @@ module.exports = {
         var app = connect(
             escort(function (routes) {
                 url = routes.url;
-                
+
                 routes.submount("/users", function (users) {
                     users.get("user", "/{name}", function (req, res, params) {
                         res.end("GET /users/" + params.name);
@@ -526,9 +526,9 @@ module.exports = {
                 });
             })
         );
-        
+
         exampleNames.forEach(function (name) {
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/users/" + name, method: "GET" },
                 { body: "GET /users/" + name });
         });
@@ -538,7 +538,7 @@ module.exports = {
         var app = connect(
             escort(function (routes) {
                 url = routes.url;
-                
+
                 routes.submount("/users/{name}", function (users) {
                     users.get("userInfo", "/info", function (req, res, params) {
                         res.end("GET /users/" + params.name + "/info");
@@ -546,9 +546,9 @@ module.exports = {
                 });
             })
         );
-        
+
         exampleNames.forEach(function (name) {
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/users/" + name + "/info", method: "GET" },
                 { body: "GET /users/" + name + "/info" });
         });
@@ -558,7 +558,7 @@ module.exports = {
         var app = connect(
             escort(function (routes) {
                 url = routes.url;
-                
+
                 routes.submount("/alpha", function (alpha) {
                     alpha.submount("/bravo", function (bravo) {
                         bravo.submount("/charlie", function (charlie) {
@@ -570,9 +570,9 @@ module.exports = {
                 });
             })
         );
-        
+
         exampleNames.forEach(function (name) {
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/alpha/bravo/charlie/" + name, method: "GET" },
                 { body: "GET /alpha/bravo/charlie/" + name });
         });
@@ -582,7 +582,7 @@ module.exports = {
         var app = connect(
             escort(function (routes) {
                 url = routes.url;
-                
+
                 routes.submount("/forums", function (forums) {
                     forums.get("forum", "/{forumSlug}", function (req, res, params) {
                         res.end("GET /forums/" + params.forumSlug);
@@ -593,15 +593,15 @@ module.exports = {
                 });
             })
         );
-        
+
         for (var i = 1; i < 10; i += 1) {
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/forums/" + i, method: "GET" },
                 { body: "GET /forums/" + i + " (thread)" });
         }
 
         exampleNames.forEach(function (name) {
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/forums/" + name, method: "GET" },
                 { body: "GET /forums/" + name });
         });
@@ -611,24 +611,24 @@ module.exports = {
         var app = connect(
             escort(function (routes) {
                 url = routes.url;
-                
+
                 routes.get("home", ["/", "/home"], function (req, res, params) {
                     res.end("GET " + req.url);
                 });
             })
         );
-        
+
         assert.strictEqual("/", url.home());
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "GET" },
             { body: "GET /" });
-            
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/home", method: "GET" },
             { body: "GET /home" });
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/ho", method: "GET" },
             { statusCode: 404 });
     },
@@ -646,15 +646,15 @@ module.exports = {
 
         assert.strictEqual("/", url.home());
 
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/", method: "GET" },
             { body: "GET /" });
 
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/home", method: "GET" },
             { body: "GET /home" });
 
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/ho", method: "GET" },
             { statusCode: 404 });
     },
@@ -663,7 +663,7 @@ module.exports = {
         var app = connect(
             escort(function (routes) {
                 url = routes.url;
-                
+
                 routes.submount("/forums", function (forums) {
                     forums.get("forum", ["", "/home"], function (req, res, params) {
                         res.end("GET " + req.url);
@@ -671,18 +671,18 @@ module.exports = {
                 });
             })
         );
-        
+
         assert.strictEqual("/forums", url.forum());
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/forums", method: "GET" },
             { body: "GET /forums" });
-            
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/forums/home", method: "GET" },
             { body: "GET /forums/home" });
-            
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/forums/ho", method: "GET" },
             { statusCode: 404 });
     },
@@ -691,7 +691,7 @@ module.exports = {
         var app = connect(
             escort(function (routes) {
                 url = routes.url;
-                
+
                 routes.submount("/forums", function (forums) {
                     forums.get("forum", "[/home]", function (req, res, params) {
                         res.end("GET " + req.url);
@@ -699,18 +699,18 @@ module.exports = {
                 });
             })
         );
-        
+
         assert.strictEqual("/forums", url.forum());
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/forums", method: "GET" },
             { body: "GET /forums" });
-            
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/forums/home", method: "GET" },
             { body: "GET /forums/home" });
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/forums/ho", method: "GET" },
             { statusCode: 404 });
     },
@@ -719,27 +719,27 @@ module.exports = {
         var app = connect(
             escort(function (routes) {
                 url = routes.url;
-                
+
                 routes.get("page", ["/", "/page/{pageNum:int({min: 1})}"], function (req, res, params) {
                     var pageNum = params.pageNum || 1;
                     res.end("Viewing page #" + pageNum);
                 });
             })
         );
-        
+
         assert.strictEqual("/", url.page());
         assert.strictEqual("/page/2", url.page(2));
         assert.strictEqual("/page/2", url.page({pageNum: 2}));
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "GET" },
             { body: "Viewing page #1" });
-            
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/page/1", method: "GET" },
             { body: "Viewing page #1" });
-            
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/page/2", method: "GET" },
             { body: "Viewing page #2" });
     },
@@ -748,27 +748,27 @@ module.exports = {
         var app = connect(
             escort(function (routes) {
                 url = routes.url;
-                
+
                 routes.get("page", "/[page/{pageNum:int({min: 1})}]", function (req, res, params) {
                     var pageNum = params.pageNum || 1;
                     res.end("Viewing page #" + pageNum);
                 });
             })
         );
-        
+
         assert.strictEqual("/", url.page());
         assert.strictEqual("/page/2", url.page(2));
         assert.strictEqual("/page/2", url.page({pageNum: 2}));
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "GET" },
             { body: "Viewing page #1" });
-            
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/page/1", method: "GET" },
             { body: "Viewing page #1" });
-            
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/page/2", method: "GET" },
             { body: "Viewing page #2" });
     },
@@ -784,8 +784,8 @@ module.exports = {
                 res.end(err.toString());
             }
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "GET" },
             { statusCode: 500, body: "Error: fake error" });
     },
@@ -800,21 +800,21 @@ module.exports = {
                 });
             })
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/blah.txt", method: "GET" },
             { body: "Blah!" });
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/blahxtxt", method: "GET" },
             { statusCode: 404 });
-        
+
         exampleNames.forEach(function (name) {
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/" + name + ".txt", method: "GET" },
                 { body: "Blah: " + name + "!" });
-            
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/" + name + "xtxt", method: "GET" },
                 { statusCode: 404 });
         });
@@ -835,12 +835,12 @@ module.exports = {
                 });
             })
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "OPTIONS" },
             { body: "GET", headers: { Allow: "GET" }, statusCode: 200 });
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/item", method: "OPTIONS" },
             { body: "GET,POST", headers: { Allow: "GET,POST" }, statusCode: 200 });
     },
@@ -852,8 +852,8 @@ module.exports = {
                 });
             })
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/?q=stuff", method: "GET" },
             { body: "GET /", statusCode: 200 });
     },
@@ -868,10 +868,10 @@ module.exports = {
             })
         );
 
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/do-something", method: "GET" },
             { body: "GET /do-something" });
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/do-something", method: "POST" },
             { body: "POST /do-something" });
     },
@@ -880,7 +880,7 @@ module.exports = {
             routes.get("/", function (req, res) {
                 res.end("GET /");
             });
-            
+
             routes.get("/error", function (req, res) {
                 throw new Error("This is an error");
             });
@@ -888,15 +888,15 @@ module.exports = {
         var app = http.createServer(function (req, res) {
             routing(req, res);
         });
-        
+
         assert.response(app,
             { url: "/", method: "GET" },
             { body: "GET /" });
-        
+
         assert.response(app,
             { url: "/not-found", method: "GET" },
             { statusCode: 404 });
-        
+
         assert.response(app,
             { url: "/error", method: "GET" },
             { statusCode: 500 });
@@ -906,8 +906,8 @@ module.exports = {
         routing.get("/", function (req, res) {
             res.end("GET /");
         });
-        
-        assert.response(connect(routing),
+
+        assert.response(http.createServer(connect(routing)),
             { url: "/", method: "GET" },
             { body: "GET /" });
     },
@@ -916,14 +916,14 @@ module.exports = {
         routing.get("post", "/{post:custom}", function (req, res, params) {
             res.end("GET /" + params.post);
         });
-        
+
         var app = connect(routing);
-        
+
         exampleNames.forEach(function (name) {
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/" + name, method: "GET" },
                 { body: "GET /" + name });
-            
+
             assert.strictEqual("/" + name, routing.url.post(name));
         });
     },
@@ -935,15 +935,15 @@ module.exports = {
                 res.end("GET /" + params.alpha + "/" + params.bravo + "/" + params.charlie + "/" + params.delta);
             });
         }));
-        
+
         exampleNames.forEach(function (alpha) {
             exampleNames.forEach(function (bravo) {
                 exampleNames.forEach(function (charlie) {
                     exampleNames.forEach(function (delta) {
-                        assert.response(app,
+                        assert.response(http.createServer(app),
                             { url: "/" + alpha + "/" + bravo + "/" + charlie + "/" + delta, method: "GET" },
                             { body: "GET /" + alpha + "/" + bravo + "/" + charlie + "/" + delta });
-            
+
                         assert.strictEqual("/" + alpha + "/" + bravo + "/" + charlie + "/" + delta, url.multi(alpha, bravo, charlie, delta));
                         assert.strictEqual("/" + alpha + "/" + bravo + "/" + charlie + "/" + delta, url.multi({alpha: alpha, bravo: bravo, charlie: charlie, delta: delta}));
                     });
@@ -962,8 +962,8 @@ module.exports = {
                 res.end("Next middleware");
             }
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "GET"},
             { body: "Next middleware" });
     },
@@ -981,8 +981,8 @@ module.exports = {
                 res.end("Unreferenced");
             }
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "GET"},
             { body: "Next middleware" });
     },
@@ -1000,8 +1000,8 @@ module.exports = {
                 res.end("Next middleware");
             }
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "GET" },
             { body: "Next middleware" });
     },
@@ -1011,7 +1011,7 @@ module.exports = {
                 routes.get("/", function (req, res, params, next) {
                     next();
                 });
-                
+
                 routes.notFound(function (req, res) {
                     res.end("Not found!");
                 });
@@ -1020,8 +1020,8 @@ module.exports = {
                 res.end("Should not be hit");
             }
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "GET" },
             { body: "Not found!" });
     },
@@ -1031,7 +1031,7 @@ module.exports = {
                 routes.get("/", function (req, res, params, next) {
                     next(new Error("Blah!"));
                 });
-                
+
                 routes.notFound(function (req, res) {
                     res.end("Not found!");
                 });
@@ -1040,8 +1040,8 @@ module.exports = {
                 res.end("Should not be hit");
             }
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "GET" },
             { statusCode: 500 });
     },
@@ -1051,7 +1051,7 @@ module.exports = {
                 routes.get("/", function (req, res, params, next) {
                     next(new Error("Blah!"));
                 });
-                
+
                 routes.notFound(function (req, res) {
                     res.end("Not found!");
                 });
@@ -1064,8 +1064,8 @@ module.exports = {
                 res.end("Oh noes!");
             }
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "GET" },
             { statusCode: 500, body: "Oh noes!" });
     },
@@ -1075,7 +1075,7 @@ module.exports = {
                 routes.get("/", function (req, res, params, next) {
                     next();
                 });
-                
+
                 routes.notFound(function (req, res, next) {
                     next();
                 });
@@ -1084,8 +1084,8 @@ module.exports = {
                 res.end("Next middleware");
             }
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "GET" },
             { body: "Next middleware" });
     },
@@ -1095,7 +1095,7 @@ module.exports = {
                 routes.get("/", function (req, res, params, next) {
                     next();
                 });
-                
+
                 routes.notFound(function (req, res, next) {
                     next(new Error("Stuff"));
                 });
@@ -1108,12 +1108,12 @@ module.exports = {
                 res.end("Oh noes!");
             }
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "GET" },
             { statusCode: 500, body: "Oh noes!" });
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/other", method: "GET" },
             { statusCode: 500, body: "Oh noes!" });
     },
@@ -1151,8 +1151,8 @@ module.exports = {
                 });
             })
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/thing/", method: "GET" },
             { statusCode: 301, headers: { Location: "/thing" } });
     },
@@ -1165,7 +1165,7 @@ module.exports = {
             })
         );
 
-        assert.response(app,
+        assert.response(http.createServer(app),
             { url: "/thing/?hello=there", method: "GET" },
             { statusCode: 301, headers: { Location: "/thing?hello=there" } });
     },
@@ -1177,8 +1177,8 @@ module.exports = {
                 });
             })
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/other/", method: "GET" },
             { statusCode: 404 });
     },
@@ -1190,16 +1190,16 @@ module.exports = {
                 });
             })
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/Thing", method: "GET" },
             { statusCode: 200, body: "GET /Thing" });
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/thing", method: "GET" },
             { statusCode: 301, headers: { Location: "/Thing" } });
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/THING", method: "GET" },
             { statusCode: 301, headers: { Location: "/Thing" } });
     },
@@ -1209,35 +1209,35 @@ module.exports = {
                 routes.get("thing", "/Thing/{item}", function (req, res, params) {
                     res.end("GET /Thing/" + params.item);
                 });
-                
+
                 routes.get("other", "/Thing/{item}/Blah", function (req, res, params) {
                     res.end("GET /Thing/" + params.item + "/Blah");
                 });
             })
         );
-        
+
         exampleNames.forEach(function (name) {
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/Thing/" + name, method: "GET" },
                 { statusCode: 200, body: "GET /Thing/" + name });
-        
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/thing/" + name, method: "GET" },
                 { statusCode: 301, headers: { Location: "/Thing/" + name } });
-        
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/THING/" + name, method: "GET" },
                 { statusCode: 301, headers: { Location: "/Thing/" + name } });
-                
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/Thing/" + name + "/Blah", method: "GET" },
                 { statusCode: 200, body: "GET /Thing/" + name + "/Blah" });
-        
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/thing/" + name + "/blah", method: "GET" },
                 { statusCode: 301, headers: { Location: "/Thing/" + name + "/Blah" } });
-        
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/THING/" + name + "/BLAH", method: "GET" },
                 { statusCode: 301, headers: { Location: "/Thing/" + name + "/Blah" } });
         });
@@ -1252,17 +1252,17 @@ module.exports = {
                 });
             })
         );
-        
+
         ["Alpha", "Bravo", "Charlie"].forEach(function (name) {
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/posts/" + name, method: "GET" },
                 { body: "GET /posts/" + name });
-            
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/posts/" + name.toLowerCase(), method: "GET" },
                 { statusCode: 301, headers: { Location: "/posts/" + name } });
-            
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/posts/" + name.toUpperCase(), method: "GET" },
                 { statusCode: 301, headers: { Location: "/posts/" + name } });
         });
@@ -1273,35 +1273,35 @@ module.exports = {
                 routes.get("alpha", "/alpha/{name:string}", function (req, res, params) {
                     res.end("GET /alpha/" + params.name);
                 });
-                
+
                 routes.get("bravo", "/bravo/{name:string({allowUpperCase: true})}", function (req, res, params) {
                     res.end("GET /bravo/" + params.name);
                 });
             })
         );
-        
+
         ["Alpha", "Bravo", "Charlie"].forEach(function (name) {
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/alpha/" + name.toLowerCase(), method: "GET" },
                 { body: "GET /alpha/" + name.toLowerCase() });
-            
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/alpha/" + name, method: "GET" },
                 { statusCode: 301, headers: { Location: "/alpha/" + name.toLowerCase() } });
-            
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/alpha/" + name.toUpperCase(), method: "GET" },
                 { statusCode: 301, headers: { Location: "/alpha/" + name.toLowerCase() } });
-            
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/bravo/" + name.toLowerCase(), method: "GET" },
                 { body: "GET /bravo/" + name.toLowerCase() });
-            
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/bravo/" + name, method: "GET" },
                 { body: "GET /bravo/" + name });
 
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/bravo/" + name.toUpperCase(), method: "GET" },
                 { body: "GET /bravo/" + name.toUpperCase() });
         });
@@ -1312,35 +1312,35 @@ module.exports = {
                 routes.get("alpha", "/alpha/{name:path}", function (req, res, params) {
                     res.end("GET /alpha/" + params.name);
                 });
-                
+
                 routes.get("bravo", "/bravo/{name:path({allowUpperCase: true})}", function (req, res, params) {
                     res.end("GET /bravo/" + params.name);
                 });
             })
         );
-        
+
         ["Alpha", "Alpha/Bravo", "Alpha/Bravo/Charlie"].forEach(function (name) {
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/alpha/" + name.toLowerCase(), method: "GET" },
                 { body: "GET /alpha/" + name.toLowerCase() });
-            
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/alpha/" + name, method: "GET" },
                 { statusCode: 301, headers: { Location: "/alpha/" + name.toLowerCase() } });
-            
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/alpha/" + name.toUpperCase(), method: "GET" },
                 { statusCode: 301, headers: { Location: "/alpha/" + name.toLowerCase() } });
-            
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/bravo/" + name.toLowerCase(), method: "GET" },
                 { body: "GET /bravo/" + name.toLowerCase() });
-            
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/bravo/" + name, method: "GET" },
                 { body: "GET /bravo/" + name });
 
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/bravo/" + name.toUpperCase(), method: "GET" },
                 { body: "GET /bravo/" + name.toUpperCase() });
         });
@@ -1353,12 +1353,12 @@ module.exports = {
                 });
             })
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/thing/", method: "GET" },
             { body: "GET /thing/" });
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/thing", method: "GET" },
             { statusCode: 301, headers: { Location: "/thing/" } });
     },
@@ -1370,13 +1370,13 @@ module.exports = {
                 });
             })
         );
-        
+
         exampleNames.forEach(function (name) {
-            assert.response(app,
+            assert.response(http.createServer(app),
                 { url: "/thing/" + name + "/", method: "GET" },
                 { body: "GET /thing/" + name + "/" });
-        
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/thing/" + name, method: "GET" },
                 { statusCode: 301, headers: { Location: "/thing/" + name + "/" } });
         });
@@ -1387,7 +1387,7 @@ module.exports = {
                 this.get("/", function (req, res) {
                     res.end("GET /");
                 });
-                
+
                 this.submount("/alpha", function () {
                     this.get("", function (req, res) {
                         res.end("GET /alpha");
@@ -1395,12 +1395,12 @@ module.exports = {
                 });
             })
         );
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/", method: "GET" },
             { body: "GET /" });
-        
-        assert.response(app,
+
+        assert.response(http.createServer(app),
             { url: "/alpha", method: "GET" },
             { body: "GET /alpha" });
     },
@@ -1414,11 +1414,11 @@ module.exports = {
                 });
             })
         );
-        
+
         exampleUnicodeNames.forEach(function (name) {
             assert.strictEqual("/unicode/" + encodeURIComponent(name), url.post(name));
-            
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/unicode/" + encodeURIComponent(name), method: "GET" },
                 { body: "GET /unicode/" + name });
         });
@@ -1435,11 +1435,11 @@ module.exports = {
                 }, this);
             })
         );
-        
+
         exampleUnicodeNames.forEach(function (name) {
             assert.strictEqual("/" + encodeURIComponent(name), url[name]());
-            
-            assert.response(app,
+
+            assert.response(http.createServer(app),
                 { url: "/" + encodeURIComponent(name), method: "GET" },
                 { body: "GET /" + name });
         });
@@ -1456,12 +1456,12 @@ module.exports = {
                 }, this);
             })
         );
-        
+
         exampleUnicodeNames.forEach(function (postName) {
             exampleUnicodeNames.forEach(function (name) {
                 assert.strictEqual("/" + encodeURIComponent("pöst") + "/" + encodeURIComponent(postName) + "/" + encodeURIComponent(name), url[name](postName));
-            
-                assert.response(app,
+
+                assert.response(http.createServer(app),
                     { url: "/" + encodeURIComponent("pöst") + "/" + encodeURIComponent(postName) + "/" + encodeURIComponent(name), method: "GET" },
                     { body: "GET /pöst/" + postName + "/" + name });
             });
@@ -1474,43 +1474,43 @@ module.exports = {
                 this.get("/", function (req, res) {
                     res.end("GET /");
                 });
-                
+
                 this.get("/posts", function (req, res) {
                     res.end("GET /posts");
                 });
-                
+
                 this.get("post", "/posts/{post}", function (req, res, params) {
                     res.end("GET /posts/" + params.post);
                 });
-                
+
                 this.get("optional", "/optional[/{dynamic}]", function (req, res, params) {
                     res.end("optional");
                 });
-                
+
                 this.get("multi", "/multi/{alpha}/{bravo}/{charlie}", function (req, res, params) {
                     res.end("multi");
                 });
-                
+
                 this.get("int", "/int/{value:int({fixedDigits: 4})}", function (req, res, params) {
                     res.end("int");
                 });
-                
+
                 this.get("any", "/any/{value:any('alpha', 'bravo', 'charlie')}", function (req, res, params) {
                     res.end("any");
                 });
-                
+
                 this.get("path", "/path/{value:path}", function (req, res, params) {
                     res.end("path");
                 });
-                
+
                 this.get("trailing", "/alpha/{value}/bravo", function (req, res, params) {
                     res.end("trailing");
                 });
-                
+
                 serialization = this.serialize();
             })
         );
-        
+
         assert.deepEqual({
             root: [{
                 path: "/"
