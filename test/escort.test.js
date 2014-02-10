@@ -857,6 +857,19 @@ module.exports = {
             { url: "/?q=stuff", method: "GET" },
             { body: "GET /", statusCode: 200 });
     },
+    "malformed querystring": function () {
+        var app = connect(
+            escort(function (routes) {
+                routes.get("/", function (req, res) {
+                    res.end("GET /");
+                });
+            })
+        );
+
+        assert.response(http.createServer(app),
+            { url: "/&q=stuff", method: "GET" },
+            { body: "GET /", statusCode: 200 });
+    },
     "multiple methods defined by the same callback": function () {
         var app = connect(
             escort(function (routes) {
