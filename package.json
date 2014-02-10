@@ -14,5 +14,5 @@
     "test": "node_modules/.bin/expresso -p 11000 test/*.js"
   },
   "main": "index",
-  "engines": { "node": ">= 0.4.1 < 0.9.0" }
+  "engines": { "node": ">= 0.4.1 < 0.11.0" }
 }
