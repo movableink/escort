@@ -1,6 +1,6 @@
 {
   "name": "@movable/escort",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Routing and URL generation middleware",
   "keywords": ["framework", "web", "middleware", "connect", "escort", "routing", "url"],
   "repository": "git://github.com/movableink/escort.git",
