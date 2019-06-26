@@ -2,10 +2,28 @@
   "name": "@movable/escort",
   "version": "0.1.1",
   "description": "Routing and URL generation middleware",
-  "keywords": ["framework", "web", "middleware", "connect", "escort", "routing", "url"],
+  "keywords": [
+    "framework",
+    "web",
+    "middleware",
+    "connect",
+    "escort",
+    "routing",
+    "url"
+  ],
   "repository": "git://github.com/movableink/escort.git",
   "author": "Cameron Kenneth Knight <ckknight@gmail.com> (http://ckknight.com)",
   "dependencies": {},
   "main": "index",
-  "engines": { "node": ">= 8" }
+  "engines": {
+    "node": ">= 8"
+  },
+  "scripts": {
+    "test": "mocha test/*.test.js"
+  },
+  "devDependencies": {
+    "connect": "^3.7.0",
+    "mocha": "^6.1.4",
+    "supertest": "^4.0.2"
+  }
 }
