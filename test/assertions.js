@@ -1,7 +1,7 @@
 const assert = require('assert');
 const util = require('util');
 const http = require('http');
-const supertest = require('supertest');
+const agent = require('supertest');
 
 assert.eql = assert.deepEqual;
 
@@ -117,10 +117,26 @@ assert.length = function(val, n, msg) {
 
 assert.response = function(app, req, res) {
   const method = (req.method || 'GET').toLowerCase();
-  const statusCode = res.statusCode || 200;
+  const statusCode = res.statusCode;
 
-  supertest(app)[method](req.url).expect(statusCode, res.body);
-  //console.log(app);
+  let a = agent(app)[method](req.url)
+      .set('Accept', 'text/plain');
+
+  if (res.headers) {
+    for (let [header, value] of Object.entries(res.headers)) {
+      a = a.expect(header, value);
+    }
+  }
+
+  if (res.statusCode) {
+    a = a.expect(res.statusCode);
+  }
+
+  if (typeof(res.body) !== 'undefined') {
+    a = a.expect(res.body);
+  }
+
+  return a;
 };
 
 module.exports = assert;
