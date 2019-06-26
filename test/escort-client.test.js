@@ -1,8 +1,8 @@
 /*jshint strict: false */
 
-var assert = require("assert"),
-    escortClient = require("../lib/escort-client");
-    
+const assert = require("./assertions");
+const escortClient = require("../lib/escort-client");
+
 var exampleNames = ["neil", "bob", "windsor"];
 var exampleUnicodeNames = ["nøgel", "über", "cliché"];
 
@@ -12,8 +12,8 @@ var makeBadString = (function (Ctor) {
     };
 }(String));
 
-module.exports = {
-    "static": function () {
+describe("escort", function() {
+    it("static", function() {
         var data = {
             home: [{
                 path: "/"
@@ -28,12 +28,13 @@ module.exports = {
                 ]
             }]
         };
-        
+
         var url = escortClient.generateUrlObject(data);
-        
+
         assert.strictEqual("/", url.home());
-    },
-    "dynamic": function () {
+    });
+
+    it("dynamic", function() {
         var data = {
             dynamic: [{
                 literals: ["/dynamic/"],
@@ -45,17 +46,18 @@ module.exports = {
                 ]
             }]
         };
-        
+
         var url = escortClient.generateUrlObject(data);
-        
+
         exampleNames.concat(exampleUnicodeNames).forEach(function (name) {
             assert.strictEqual("/dynamic/" + encodeURIComponent(name), url.dynamic(name));
             assert.strictEqual("/dynamic/" + encodeURIComponent(name), url.dynamic({ value: name }));
             assert.strictEqual("/dynamic/" + encodeURIComponent(name), url.dynamic(makeBadString(name)));
             assert.strictEqual("/dynamic/" + encodeURIComponent(name), url.dynamic({ value: makeBadString(name) }));
         });
-    },
-    "mixed": function () {
+    });
+
+    it("mixed", function() {
         var data = {
             posts: [
                 {
@@ -72,15 +74,16 @@ module.exports = {
                 }
             ]
         };
-        
+
         var url = escortClient.generateUrlObject(data);
         assert.strictEqual("/posts", url.posts());
         for (var i = 2; i < 20; i += 1) {
             assert.strictEqual("/posts/page/" + i, url.posts(i));
             assert.strictEqual("/posts/page/" + i, url.posts({ page: i }));
         }
-    },
-    "multiple dynamic": function () {
+    });
+
+    it("multiple dynamic", function() {
         var data = {
             test: [
                 {
@@ -118,8 +121,9 @@ module.exports = {
                 });
             });
         });
-    },
-    "int converter": function () {
+    });
+
+    it("int converter", function() {
         var data = {
             int: [{
                 literals: ["/"],
@@ -137,7 +141,7 @@ module.exports = {
                 }]
             }],
         };
-        
+
         var zeroPad = function (value) {
             if (value < 10) {
                 return "000" + value;
@@ -149,7 +153,7 @@ module.exports = {
                 return value;
             }
         };
-        
+
         var url = escortClient.generateUrlObject(data);
         for (var i = 0; i < 100; i += 1) {
             var randValue = Math.floor(Math.random() * 10000);
@@ -157,15 +161,16 @@ module.exports = {
             assert.strictEqual("/" + i, url.int({ value: i }));
             assert.strictEqual("/" + randValue, url.int(randValue));
             assert.strictEqual("/" + randValue, url.int({ value: randValue }));
-            
+
             assert.strictEqual("/archive/" + zeroPad(i), url.archive(i));
             assert.strictEqual("/archive/" + zeroPad(i), url.archive({ year: i }));
             assert.strictEqual("/archive/" + zeroPad(randValue), url.archive(randValue));
             assert.strictEqual("/archive/" + zeroPad(randValue), url.archive({ year: randValue }));
-            
+
         }
-    },
-    "path converter": function () {
+    });
+
+    it("path converter", function() {
         var data = {
             post: [{
                 literals: ["/"],
@@ -176,7 +181,7 @@ module.exports = {
             }]
         };
         var url = escortClient.generateUrlObject(data);
-        
+
         for (var i = 1; i < "howdy/partner/how/are/you".length; i += 1) {
             var part = "howdy/partner/how/are/you".substr(0, i);
             if (part.charAt(part.length - 1) !== "/") {
@@ -184,5 +189,5 @@ module.exports = {
                 assert.strictEqual("/" + part, url.post({ path: part }));
             }
         }
-    }
-};
+    });
+});
