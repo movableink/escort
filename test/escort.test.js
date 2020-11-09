@@ -1272,6 +1272,20 @@ describe("escort", function() {
                           { statusCode: 301, headers: { Location: "/thing?hello=there" } });
   });
 
+  it("retrieving a known URL with invalid characters in querystring should return a MovedPermanently with scrubbed querystring", async function() {
+    var app = makeConnect(
+      escort(function (routes) {
+        routes.get("/thing", function (req, res) {
+          res.end("GET /thing");
+        });
+      })
+    );
+
+    await assert.response(app,
+                          { url: "/thing/?baz=%17693a9f-2e38-4a06-8b2f-1856f3d9908f%25", method: "GET" },
+                          { statusCode: 301, headers: { Location: "/thing?baz=%17693a9f-2e38-4a06-8b2f-1856f3d9908f%25" } });
+  });
+
   it("retrieving an unknown URL with a slash should return a NotFound", async function() {
     var app = makeConnect(
       escort(function (routes) {
