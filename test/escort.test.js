@@ -1274,7 +1274,6 @@ describe("escort", function() {
   });
 
   it("sanitizes bad redirects", async function () {
-    var url;
     var app = makeConnect(
       function (req, res, next) {
         req.url = req.originalUrl = "/route/?u=\u0016ee%";
@@ -1282,8 +1281,6 @@ describe("escort", function() {
         next();
       },
       escort(function (routes) {
-        url = routes.url;
-
         routes.get("route", "/route", function (req, res) {
           res.end("ok");
         });
