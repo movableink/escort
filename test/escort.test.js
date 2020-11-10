@@ -3,7 +3,8 @@
 var connect = require("connect"),
     http = require('http'),
     assert = require("./assertions"),
-    escort = require("../index");
+    escort = require("../index"),
+    urlParser = require('url');
 
 var methods = ["get", "post", "put", "delete"];
 var exampleNames = ["neil", "bob", "windsor"];
@@ -1270,6 +1271,29 @@ describe("escort", function() {
     await assert.response(app,
                           { url: "/thing/?hello=there", method: "GET" },
                           { statusCode: 301, headers: { Location: "/thing?hello=there" } });
+  });
+
+  it("sanitizes bad redirects", async function () {
+    var app = makeConnect(
+      function (req, res, next) {
+        req.url = req.originalUrl = "/route/?u=\u0016ee%";
+        req._parsedUrl = urlParser.parse(req.url);
+        next();
+      },
+      escort(function (routes) {
+        routes.get("route", "/route", function (req, res) {
+          res.end("ok");
+        });
+      })
+    );
+
+    const expectedHeaders = { Location: "%2Froute%3Fu%3D%16ee%25" };
+
+    await assert.response(
+      app,
+      { url: "/this-is-ignored", method: "GET" },
+      { statusCode: 301, headers: expectedHeaders }
+    );
   });
 
   it("retrieving an unknown URL with a slash should return a NotFound", async function() {
