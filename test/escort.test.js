@@ -3,7 +3,8 @@
 var connect = require("connect"),
     http = require('http'),
     assert = require("./assertions"),
-    escort = require("../index");
+    escort = require("../index"),
+    urlParser = require('url');
 
 var methods = ["get", "post", "put", "delete"];
 var exampleNames = ["neil", "bob", "windsor"];
@@ -1272,18 +1273,30 @@ describe("escort", function() {
                           { statusCode: 301, headers: { Location: "/thing?hello=there" } });
   });
 
-  it("retrieving a known URL with invalid characters in querystring should return a MovedPermanently with scrubbed querystring", async function() {
+  it("sanitizes bad redirects", async function () {
+    var url;
     var app = makeConnect(
+      function (req, res, next) {
+        req.url = req.originalUrl = "/route/?u=\u0016ee%";
+        req._parsedUrl = urlParser.parse(req.url);
+        next();
+      },
       escort(function (routes) {
-        routes.get("/thing", function (req, res) {
-          res.end("GET /thing");
+        url = routes.url;
+
+        routes.get("route", "/route", function (req, res) {
+          res.end("ok");
         });
       })
     );
 
-    await assert.response(app,
-                          { url: "/thing/?baz=%17693a9f-2e38-4a06-8b2f-1856f3d9908f%25", method: "GET" },
-                          { statusCode: 301, headers: { Location: "/thing?baz=%17693a9f-2e38-4a06-8b2f-1856f3d9908f%25" } });
+    const expectedHeaders = { Location: "%2Froute%3Fu%3D%16ee%25" };
+
+    await assert.response(
+      app,
+      { url: "/this-is-ignored", method: "GET" },
+      { statusCode: 301, headers: expectedHeaders }
+    );
   });
 
   it("retrieving an unknown URL with a slash should return a NotFound", async function() {
