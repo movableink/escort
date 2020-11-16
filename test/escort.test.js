@@ -1287,7 +1287,7 @@ describe("escort", function() {
       })
     );
 
-    const expectedHeaders = { Location: "%2Froute%3Fu%3D%16ee%25" };
+    const expectedHeaders = { Location: "/route?u=%16ee%25" };
 
     await assert.response(
       app,
