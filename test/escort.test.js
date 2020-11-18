@@ -1369,6 +1369,10 @@ describe("escort", function() {
       await assert.response(app,
                             { url: "/THING/" + name + "/BLAH", method: "GET" },
                             { statusCode: 301, headers: { Location: "/Thing/" + name + "/Blah" } });
+
+      await assert.response(app,
+                            { url: "/Thing/" + name + "%3FBlah%3D%25" },
+                            { statusCode: 301, headers: { Location: "/Thing/" + name + "?blah=%"}})
     }
   });
 
