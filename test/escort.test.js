@@ -1369,10 +1369,6 @@ describe("escort", function() {
       await assert.response(app,
                             { url: "/THING/" + name + "/BLAH", method: "GET" },
                             { statusCode: 301, headers: { Location: "/Thing/" + name + "/Blah" } });
-
-      await assert.response(app,
-                            { url: "/Thing/" + name + "%3FBlah%3D%25" },
-                            { statusCode: 301, headers: { Location: "/Thing/" + name + "?blah=%"}})
     }
   });
 
@@ -1479,6 +1475,54 @@ describe("escort", function() {
       await assert.response(app,
                             { url: "/bravo/" + name.toUpperCase(), method: "GET" },
                             { body: "GET /bravo/" + name.toUpperCase() });
+    }
+  });
+
+  it("string converter with encoded query params", async function() {
+    var app = makeConnect(
+      escort(function (routes) {
+        routes.get("alpha", "/alpha/{item:string}", function(req, res, params) {
+          res.end("GET /alpha/" + params.item);
+        });
+
+        routes.get("bravo", "/bravo/{item:string({allowUpperCase: true})}", function(req, res, params) {
+          res.end("GET /bravo/" + params.item);
+        });
+      })
+    );
+
+    for (let name of exampleNames) {
+      await assert.response(app,
+                            { url: "/alpha/" + name + encodeURIComponent("?Blah=%") },
+                            { statusCode: 301, headers: { Location: "/alpha/" + name + "?blah=%" } });
+
+      await assert.response(app,
+                            { url: "/bravo/" + name + encodeURIComponent("?Blah=%") },
+                            { body: "GET /bravo/" + name + "?Blah=%" });
+    }
+  });
+
+  it("path converter with encoded query params", async function() {
+    var app = makeConnect(
+      escort(function (routes) {
+        routes.get("alpha", "/alpha/{item:path}", function(req, res, params) {
+          res.end("GET /alpha/" + params.item);
+        });
+
+        routes.get("bravo", "/bravo/{item:path({allowUpperCase: true})}", function(req, res, params) {
+          res.end("GET /bravo/" + params.item);
+        });
+      })
+    );
+
+    for (let name of exampleNames) {
+      await assert.response(app,
+                            { url: "/alpha/" + name + encodeURIComponent("?Blah=%") },
+                            { statusCode: 301, headers: { Location: "/alpha/" + name + "?blah=%" } });
+
+      await assert.response(app,
+                            { url: "/bravo/" + name + encodeURIComponent("?Blah=%") },
+                            { body: "GET /bravo/" + name + "?Blah=%" });
     }
   });
 
