@@ -1,6 +1,6 @@
 {
   "name": "@movable/escort",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Routing and URL generation middleware",
   "keywords": [
     "framework",
